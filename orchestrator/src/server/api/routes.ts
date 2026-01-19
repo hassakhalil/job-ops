@@ -470,7 +470,13 @@ apiRouter.patch('/settings', async (req: Request, res: Response) => {
       if (resumeProjects === null) {
         await settingsRepo.setSetting('resumeProjects', null);
       } else {
-        const profile = (await loadResumeProfile()) as Record<string, unknown>;
+        const rawProfile = await loadResumeProfile();
+
+        if (rawProfile === null || typeof rawProfile !== 'object' || Array.isArray(rawProfile)) {
+          throw new Error('Invalid resume profile format: expected a non-null object');
+        }
+
+        const profile = rawProfile as Record<string, unknown>;
         const { catalog } = extractProjectsFromProfile(profile);
         const allowed = new Set(catalog.map((p) => p.id));
         const normalized = normalizeResumeProjectsSettings(resumeProjects, allowed);
